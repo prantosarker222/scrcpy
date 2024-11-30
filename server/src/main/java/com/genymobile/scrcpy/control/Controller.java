@@ -5,12 +5,10 @@ import com.genymobile.scrcpy.AsyncProcessor;
 import com.genymobile.scrcpy.CleanUp;
 import com.genymobile.scrcpy.Options;
 import com.genymobile.scrcpy.device.Device;
-import com.genymobile.scrcpy.device.DeviceApp;
 import com.genymobile.scrcpy.device.Point;
 import com.genymobile.scrcpy.device.Position;
 import com.genymobile.scrcpy.device.Size;
 import com.genymobile.scrcpy.util.Ln;
-import com.genymobile.scrcpy.util.LogUtils;
 import com.genymobile.scrcpy.video.SurfaceCapture;
 import com.genymobile.scrcpy.video.VirtualDisplayListener;
 import com.genymobile.scrcpy.wrappers.ClipboardManager;
@@ -19,6 +17,7 @@ import com.genymobile.scrcpy.wrappers.ServiceManager;
 
 import android.content.IOnPrimaryClipChangedListener;
 import android.content.Intent;
+import android.content.pm.ResolveInfo;
 import android.os.Build;
 import android.os.SystemClock;
 import android.view.InputDevice;
@@ -610,34 +609,26 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
     }
 
     private void startApp(String name) {
+        List<ResolveInfo> drawerApps = Device.getDrawerApps();
+        Intent launchIntent;
+
         boolean forceStopBeforeStart = name.startsWith("+");
         if (forceStopBeforeStart) {
             name = name.substring(1);
         }
 
-        DeviceApp app;
         boolean searchByName = name.startsWith("?");
         if (searchByName) {
             name = name.substring(1);
-
-            Ln.i("Processing Android apps... (this may take some time)");
-            List<DeviceApp> apps = Device.findByName(name);
-            if (apps.isEmpty()) {
-                Ln.w("No app found for name \"" + name + "\"");
+            launchIntent = Device.getAppWithUniqueLabel(drawerApps,name);
+            if (launchIntent == null){
+                Ln.w("No unique app found named: " + name);
                 return;
             }
-
-            if (apps.size() > 1) {
-                String title = "No unique app found for name \"" + name + "\":";
-                Ln.w(LogUtils.buildAppListMessage(title, apps));
-                return;
-            }
-
-            app = apps.get(0);
         } else {
-            app = Device.findByPackageName(name);
-            if (app == null) {
-                Ln.w("No app found for package \"" + name + "\"");
+            launchIntent = Device.getAppGivenPackageName(drawerApps,name);
+            if (launchIntent == null) {
+                Ln.w("No app found for package: " + name);
                 return;
             }
         }
@@ -648,8 +639,10 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
             return;
         }
 
-        Ln.i("Starting app \"" + app.getName() + "\" [" + app.getPackageName() + "] on display " + startAppDisplayId + "...");
-        Device.startApp(app.getPackageName(), startAppDisplayId, forceStopBeforeStart);
+        String label = Device.getLabel(drawerApps, launchIntent);
+        String packageName = launchIntent.getPackage();
+        Ln.i("Starting app \"" + label + "\" [" + packageName + "] on display " + startAppDisplayId + "...");
+        Device.startApp(launchIntent, startAppDisplayId, forceStopBeforeStart);
     }
 
     private int getStartAppDisplayId() {

@@ -11,11 +11,14 @@ import com.genymobile.scrcpy.wrappers.ServiceManager;
 import com.genymobile.scrcpy.wrappers.SurfaceControl;
 import com.genymobile.scrcpy.wrappers.WindowManager;
 
-import android.annotation.SuppressLint;
+import android.app.UiModeManager;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.app.ActivityOptions;
-import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -221,82 +224,7 @@ public final class Device {
         return displayInfo.getRotation();
     }
 
-    public static List<DeviceApp> listApps() {
-        List<DeviceApp> apps = new ArrayList<>();
-        PackageManager pm = FakeContext.get().getPackageManager();
-        for (ApplicationInfo appInfo : getLaunchableApps(pm)) {
-            apps.add(toApp(pm, appInfo));
-        }
-
-        return apps;
-    }
-
-    @SuppressLint("QueryPermissionsNeeded")
-    private static List<ApplicationInfo> getLaunchableApps(PackageManager pm) {
-        List<ApplicationInfo> result = new ArrayList<>();
-        for (ApplicationInfo appInfo : pm.getInstalledApplications(PackageManager.GET_META_DATA)) {
-            if (appInfo.enabled && getLaunchIntent(pm, appInfo.packageName) != null) {
-                result.add(appInfo);
-            }
-        }
-
-        return result;
-    }
-
-    public static Intent getLaunchIntent(PackageManager pm, String packageName) {
-        Intent launchIntent = pm.getLaunchIntentForPackage(packageName);
-        if (launchIntent != null) {
-            return launchIntent;
-        }
-
-        return pm.getLeanbackLaunchIntentForPackage(packageName);
-    }
-
-    private static DeviceApp toApp(PackageManager pm, ApplicationInfo appInfo) {
-        String name = pm.getApplicationLabel(appInfo).toString();
-        boolean system = (appInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
-        return new DeviceApp(appInfo.packageName, name, system);
-    }
-
-    @SuppressLint("QueryPermissionsNeeded")
-    public static DeviceApp findByPackageName(String packageName) {
-        PackageManager pm = FakeContext.get().getPackageManager();
-        // No need to filter by "launchable" apps, an error will be reported on start if the app is not launchable
-        for (ApplicationInfo appInfo : pm.getInstalledApplications(PackageManager.GET_META_DATA)) {
-            if (packageName.equals(appInfo.packageName)) {
-                return toApp(pm, appInfo);
-            }
-        }
-
-        return null;
-    }
-
-    @SuppressLint("QueryPermissionsNeeded")
-    public static List<DeviceApp> findByName(String searchName) {
-        List<DeviceApp> result = new ArrayList<>();
-        searchName = searchName.toLowerCase(Locale.getDefault());
-
-        PackageManager pm = FakeContext.get().getPackageManager();
-        for (ApplicationInfo appInfo : getLaunchableApps(pm)) {
-            String name = pm.getApplicationLabel(appInfo).toString();
-            if (name.toLowerCase(Locale.getDefault()).startsWith(searchName)) {
-                boolean system = (appInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
-                result.add(new DeviceApp(appInfo.packageName, name, system));
-            }
-        }
-
-        return result;
-    }
-
-    public static void startApp(String packageName, int displayId, boolean forceStop) {
-        PackageManager pm = FakeContext.get().getPackageManager();
-
-        Intent launchIntent = getLaunchIntent(pm, packageName);
-        if (launchIntent == null) {
-            Ln.w("Cannot create launch intent for app " + packageName);
-            return;
-        }
-
+    public static void startApp(Intent launchIntent, int displayId, boolean forceStop) {
         launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
         Bundle options = null;
@@ -308,8 +236,62 @@ public final class Device {
 
         ActivityManager am = ServiceManager.getActivityManager();
         if (forceStop) {
-            am.forceStopPackage(packageName);
+            am.forceStopPackage(launchIntent.getPackage());
         }
         am.startActivity(launchIntent, options);
+    }
+
+    public static List<ResolveInfo> getDrawerApps() {
+        Context context = FakeContext.get();
+        PackageManager packageManager = context.getPackageManager();
+
+        Intent intent = new Intent(Intent.ACTION_MAIN, null);
+
+        UiModeManager uiModeManager = (UiModeManager) context.getSystemService(Context.UI_MODE_SERVICE);
+        if (uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION){
+            intent.addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER);
+        } else {
+            intent.addCategory(Intent.CATEGORY_LAUNCHER);
+        }
+        return packageManager.queryIntentActivities(intent, 0);
+    }
+
+    public static Intent getAppWithUniqueLabel(List<ResolveInfo> drawerApps, String label){
+        Context context = FakeContext.get();
+        label = label.toLowerCase(Locale.getDefault());
+
+        List<ResolveInfo> match = new ArrayList<>();
+        for (ResolveInfo drawerApp : drawerApps) {
+            String appName = drawerApp.loadLabel(context.getPackageManager()).toString();
+            if (appName.toLowerCase(Locale.getDefault()).equals(label)){
+                match.add(drawerApp);
+            }
+        }
+
+        if (match.size() == 1){
+            ComponentName componentName = new ComponentName(match.get(0).activityInfo.packageName, match.get(0).activityInfo.name);
+            return new Intent().setComponent(componentName);
+        } else{
+            return null;
+        }
+    }
+
+    public static Intent getAppGivenPackageName(List<ResolveInfo> drawerApps, String packageName){
+        for (ResolveInfo drawerApp : drawerApps) {
+            if (drawerApp.activityInfo.packageName.equals(packageName)){
+                ComponentName componentName = new ComponentName(drawerApp.activityInfo.packageName, drawerApp.activityInfo.name);
+                return new Intent().setComponent(componentName);
+            }
+        }
+        return null;
+    }
+
+    public static String getLabel(List<ResolveInfo> drawerApps, Intent intent){
+        for (ResolveInfo drawerApp : drawerApps) {
+            if (drawerApp.activityInfo.packageName.equals(intent.getPackage())) {
+                return drawerApp.loadLabel(FakeContext.get().getPackageManager()).toString();
+            }
+        }
+        return null;
     }
 }
