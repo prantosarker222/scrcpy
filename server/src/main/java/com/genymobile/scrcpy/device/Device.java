@@ -11,6 +11,7 @@ import com.genymobile.scrcpy.wrappers.ServiceManager;
 import com.genymobile.scrcpy.wrappers.SurfaceControl;
 import com.genymobile.scrcpy.wrappers.WindowManager;
 
+import android.annotation.SuppressLint;
 import android.app.UiModeManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -241,6 +242,7 @@ public final class Device {
         am.startActivity(launchIntent, options);
     }
 
+    @SuppressLint("QueryPermissionsNeeded")
     public static List<ResolveInfo> getDrawerApps() {
         Context context = FakeContext.get();
         PackageManager packageManager = context.getPackageManager();
@@ -286,9 +288,9 @@ public final class Device {
         return null;
     }
 
-    public static String getLabel(List<ResolveInfo> drawerApps, Intent intent){
+    public static String getLabel(List<ResolveInfo> drawerApps, String packageName){
         for (ResolveInfo drawerApp : drawerApps) {
-            if (drawerApp.activityInfo.packageName.equals(intent.getPackage())) {
+            if (drawerApp.activityInfo.packageName.equals(packageName)) {
                 return drawerApp.loadLabel(FakeContext.get().getPackageManager()).toString();
             }
         }

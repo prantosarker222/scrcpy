@@ -639,8 +639,8 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
             return;
         }
 
-        String label = Device.getLabel(drawerApps, launchIntent);
-        String packageName = launchIntent.getPackage();
+        String packageName = launchIntent.getComponent().getPackageName();
+        String label = Device.getLabel(drawerApps, packageName);
         Ln.i("Starting app \"" + label + "\" [" + packageName + "] on display " + startAppDisplayId + "...");
         Device.startApp(launchIntent, startAppDisplayId, forceStopBeforeStart);
     }
