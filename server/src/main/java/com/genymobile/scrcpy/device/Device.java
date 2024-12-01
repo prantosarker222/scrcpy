@@ -290,13 +290,20 @@ public final class Device {
     }
 
     public static Intent getAppGivenPackageName(List<ResolveInfo> drawerApps, String packageName){
+        String errorMessage = "No app found with package name \"" + packageName + "\"\n";
+        List<ResolveInfo> potentialMatches = new ArrayList<>();
         for (ResolveInfo drawerApp : drawerApps) {
             if (drawerApp.activityInfo.packageName.equals(packageName)){
                 ComponentName componentName = new ComponentName(drawerApp.activityInfo.packageName, drawerApp.activityInfo.name);
                 return new Intent().setComponent(componentName);
+            } else if (drawerApp.activityInfo.packageName
+                    .contains(packageName)) {
+                potentialMatches.add(drawerApp);
             }
         }
-        Ln.e("No app found for package: \"" + packageName + "\"");
+        if (!potentialMatches.isEmpty()){
+            Ln.e(errorMessage+LogUtils.buildAppListMessage("Found " + potentialMatches.size() + " potential " + (potentialMatches.size() == 1 ? "match:" : "matches:"), potentialMatches));
+        }
         return null;
     }
 
