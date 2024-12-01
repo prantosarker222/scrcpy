@@ -203,13 +203,17 @@ public final class LogUtils {
         Context context = FakeContext.get();
 
         for (ResolveInfo app : drawerApps) {
-            appMap.put(app.activityInfo.packageName,app.loadLabel(context.getPackageManager()).toString());
+            appMap.put(app.activityInfo.packageName, app.loadLabel(context.getPackageManager()).toString());
         }
 
         TreeMap<String, String> sortedMap = new TreeMap<>(new Comparator<String>() {
             @Override
             public int compare(String key1, String key2) {
-                return appMap.get(key1).compareToIgnoreCase(appMap.get(key2));
+                int labelComparison = appMap.get(key1).compareToIgnoreCase(appMap.get(key2));
+                if (labelComparison != 0) {
+                    return labelComparison;
+                }
+                return key1.compareTo(key2); // Compare by package name if labels are the same
             }
         });
         sortedMap.putAll(appMap);
