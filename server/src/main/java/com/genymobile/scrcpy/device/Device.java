@@ -277,7 +277,8 @@ public final class Device {
 
         if (exactMatches.size() == 1){
             ComponentName componentName = new ComponentName(exactMatches.get(0).activityInfo.packageName, exactMatches.get(0).activityInfo.name);
-            return new Intent().setComponent(componentName);
+            return new Intent().setComponent(componentName)
+                    .putExtra("APP_LABEL", exactMatches.get(0).loadLabel(context.getPackageManager()).toString());
         } else{
             String suggestions = "";
 
@@ -312,15 +313,6 @@ public final class Device {
             Ln.e(errorMessage+LogUtils.buildAppListMessage("Found " + potentialMatches.size() + " potential " + (potentialMatches.size() == 1 ? "match:" : "matches:"), potentialMatches));
         } else {
             Ln.e(errorMessage);
-        }
-        return null;
-    }
-
-    public static String getLabel(List<ResolveInfo> drawerApps, String packageName){
-        for (ResolveInfo drawerApp : drawerApps) {
-            if (drawerApp.activityInfo.packageName.equals(packageName)) {
-                return drawerApp.loadLabel(FakeContext.get().getPackageManager()).toString();
-            }
         }
         return null;
     }

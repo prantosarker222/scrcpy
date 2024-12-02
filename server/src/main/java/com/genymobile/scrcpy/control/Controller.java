@@ -643,7 +643,7 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
 
             boolean searchByName = name.startsWith("?") || name.contains(" ");
             if (searchByName) {
-                if (!name.contains(" ")) {
+                if (name.contains("?")) {
                     name = name.substring(1);
                 }
                 launchIntent = Device.getAppWithUniqueLabel(drawerApps,name);
@@ -658,7 +658,8 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
             }
 
             String packageName = launchIntent.getComponent().getPackageName();
-            String label = Device.getLabel(drawerApps, packageName);
+            String label = launchIntent.getStringExtra("APP_LABEL");
+            launchIntent.removeExtra("APP_LABEL");
             Ln.i("Starting app \"" + label + "\" [" + packageName + "] on display " + startAppDisplayId + "...");
         }
 
