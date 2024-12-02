@@ -612,6 +612,16 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
         List<ResolveInfo> drawerApps = Device.getDrawerApps();
         Intent launchIntent;
 
+        if (name.contains("+") && name.contains("-")){
+            Ln.e("Can't make a (+) new instance if (-) force stop is also specified.");
+            return;
+        }
+
+        boolean newInstance = name.startsWith("+");
+        if (newInstance) {
+            name = name.substring(1);
+        }
+
         boolean forceStopBeforeStart = name.startsWith("-");
         if (forceStopBeforeStart) {
             name = name.substring(1);
@@ -629,6 +639,11 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
             if (launchIntent == null) {
                 return;
             }
+        }
+
+        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        if (newInstance) {
+            launchIntent.addFlags(Intent. FLAG_ACTIVITY_MULTIPLE_TASK);
         }
 
         int startAppDisplayId = getStartAppDisplayId();

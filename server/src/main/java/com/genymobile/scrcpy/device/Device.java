@@ -227,8 +227,6 @@ public final class Device {
     }
 
     public static void startApp(Intent launchIntent, int displayId, boolean forceStop) {
-        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
         Bundle options = null;
         if (Build.VERSION.SDK_INT >= AndroidVersions.API_26_ANDROID_8_0) {
             ActivityOptions launchOptions = ActivityOptions.makeBasic();
