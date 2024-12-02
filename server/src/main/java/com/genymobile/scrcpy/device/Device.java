@@ -279,17 +279,25 @@ public final class Device {
             ComponentName componentName = new ComponentName(exactMatches.get(0).activityInfo.packageName, exactMatches.get(0).activityInfo.name);
             return new Intent().setComponent(componentName);
         } else{
+            String suggestions = "";
+
             if (!exactMatches.isEmpty()){
-                Ln.e(errorMessage+LogUtils.buildAppListMessage("Found "+exactMatches.size()+" exact matches:",exactMatches));
+                suggestions+=LogUtils.buildAppListMessage("Found "+exactMatches.size()+" exact matches:",exactMatches)+"\n";
             }
             if (!potentialMatches.isEmpty()){
-                Ln.e(errorMessage+LogUtils.buildAppListMessage("Found " + potentialMatches.size() + " potential " + (potentialMatches.size() == 1 ? "match:" : "matches:"), potentialMatches));
+                suggestions+=LogUtils.buildAppListMessage("Found " + potentialMatches.size() + " potential " + (potentialMatches.size() == 1 ? "match:" : "matches:"), potentialMatches)+"\n";
+            }
+
+            if (!suggestions.isEmpty()){
+                Ln.e(errorMessage+suggestions);
             }
             return null;
         }
     }
 
     public static Intent getAppGivenPackageName(List<ResolveInfo> drawerApps, String packageName){
+        Ln.d("package name?");
+        packageName = packageName.toLowerCase(Locale.getDefault());
         String errorMessage = "No app found with package name \"" + packageName + "\"\n";
         List<ResolveInfo> potentialMatches = new ArrayList<>();
         for (ResolveInfo drawerApp : drawerApps) {
@@ -303,6 +311,8 @@ public final class Device {
         }
         if (!potentialMatches.isEmpty()){
             Ln.e(errorMessage+LogUtils.buildAppListMessage("Found " + potentialMatches.size() + " potential " + (potentialMatches.size() == 1 ? "match:" : "matches:"), potentialMatches));
+        } else {
+            Ln.e(errorMessage);
         }
         return null;
     }
