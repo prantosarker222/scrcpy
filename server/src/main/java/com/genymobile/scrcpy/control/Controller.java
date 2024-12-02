@@ -622,13 +622,11 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
             name = name.substring(1);
             launchIntent = Device.getAppWithUniqueLabel(drawerApps,name);
             if (launchIntent == null){
-                Ln.w("No unique app found named: " + name);
                 return;
             }
         } else {
             launchIntent = Device.getAppGivenPackageName(drawerApps,name);
             if (launchIntent == null) {
-                Ln.w("No app found for package: " + name);
                 return;
             }
         }
