@@ -15,6 +15,7 @@ import com.genymobile.scrcpy.wrappers.ClipboardManager;
 import com.genymobile.scrcpy.wrappers.InputManager;
 import com.genymobile.scrcpy.wrappers.ServiceManager;
 
+import android.content.ComponentName;
 import android.content.IOnPrimaryClipChangedListener;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
@@ -609,8 +610,13 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
     }
 
     private void startApp(String name) {
-        List<ResolveInfo> drawerApps = Device.getDrawerApps();
-        Intent launchIntent;
+        Intent launchIntent = new Intent();
+
+        int startAppDisplayId = getStartAppDisplayId();
+        if (startAppDisplayId == Device.DISPLAY_ID_NONE) {
+            Ln.e("No known display id to start app \"" + name + "\"");
+            return;
+        }
 
         if (name.contains("+") && name.contains("-")){
             Ln.e("Can't make a (+) new instance if (-) force stop is also specified.");
@@ -627,34 +633,37 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
             name = name.substring(1);
         }
 
-        boolean searchByName = name.startsWith("?");
-        if (searchByName) {
-            name = name.substring(1);
-            launchIntent = Device.getAppWithUniqueLabel(drawerApps,name);
-            if (launchIntent == null){
-                return;
-            }
+        if (name.contains("/")){
+            ComponentName component = new ComponentName(name.split("/")[0], name.split("/")[1]);
+            launchIntent.setComponent(component);
+
+            Ln.i("Starting activity: " + name);
         } else {
-            launchIntent = Device.getAppGivenPackageName(drawerApps,name);
-            if (launchIntent == null) {
-                return;
+            List<ResolveInfo> drawerApps = Device.getDrawerApps();
+
+            boolean searchByName = name.startsWith("?");
+            if (searchByName) {
+                name = name.substring(1);
+                launchIntent = Device.getAppWithUniqueLabel(drawerApps,name);
+                if (launchIntent == null){
+                    return;
+                }
+            } else {
+                launchIntent = Device.getAppGivenPackageName(drawerApps,name);
+                if (launchIntent == null) {
+                    return;
+                }
             }
+
+            String packageName = launchIntent.getComponent().getPackageName();
+            String label = Device.getLabel(drawerApps, packageName);
+            Ln.i("Starting app \"" + label + "\" [" + packageName + "] on display " + startAppDisplayId + "...");
         }
 
         launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         if (newInstance) {
             launchIntent.addFlags(Intent. FLAG_ACTIVITY_MULTIPLE_TASK);
         }
-
-        int startAppDisplayId = getStartAppDisplayId();
-        if (startAppDisplayId == Device.DISPLAY_ID_NONE) {
-            Ln.e("No known display id to start app \"" + name + "\"");
-            return;
-        }
-
-        String packageName = launchIntent.getComponent().getPackageName();
-        String label = Device.getLabel(drawerApps, packageName);
-        Ln.i("Starting app \"" + label + "\" [" + packageName + "] on display " + startAppDisplayId + "...");
         Device.startApp(launchIntent, startAppDisplayId, forceStopBeforeStart);
     }
 
