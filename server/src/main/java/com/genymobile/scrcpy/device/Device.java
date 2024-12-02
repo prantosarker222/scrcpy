@@ -3,6 +3,7 @@ package com.genymobile.scrcpy.device;
 import com.genymobile.scrcpy.AndroidVersions;
 import com.genymobile.scrcpy.FakeContext;
 import com.genymobile.scrcpy.util.Ln;
+import com.genymobile.scrcpy.util.LogUtils;
 import com.genymobile.scrcpy.wrappers.ActivityManager;
 import com.genymobile.scrcpy.wrappers.ClipboardManager;
 import com.genymobile.scrcpy.wrappers.DisplayControl;
@@ -259,21 +260,33 @@ public final class Device {
     }
 
     public static Intent getAppWithUniqueLabel(List<ResolveInfo> drawerApps, String label){
+        String errorMessage = "No unique app found named \"" + label + "\"\n";
         Context context = FakeContext.get();
         label = label.toLowerCase(Locale.getDefault());
 
-        List<ResolveInfo> match = new ArrayList<>();
+        List<ResolveInfo> exactMatches = new ArrayList<>();
+        List<ResolveInfo> potentialMatches = new ArrayList<>();
+
         for (ResolveInfo drawerApp : drawerApps) {
             String appName = drawerApp.loadLabel(context.getPackageManager()).toString();
             if (appName.toLowerCase(Locale.getDefault()).equals(label)){
-                match.add(drawerApp);
+                exactMatches.add(drawerApp);
+            }else if (appName.toLowerCase(Locale.getDefault())
+                    .contains(label.toLowerCase(Locale.getDefault()))) {
+                potentialMatches.add(drawerApp);
             }
         }
 
-        if (match.size() == 1){
-            ComponentName componentName = new ComponentName(match.get(0).activityInfo.packageName, match.get(0).activityInfo.name);
+        if (exactMatches.size() == 1){
+            ComponentName componentName = new ComponentName(exactMatches.get(0).activityInfo.packageName, exactMatches.get(0).activityInfo.name);
             return new Intent().setComponent(componentName);
         } else{
+            if (!exactMatches.isEmpty()){
+                Ln.e(errorMessage+LogUtils.buildAppListMessage("Found "+exactMatches.size()+" exact matches:",exactMatches));
+            }
+            if (!potentialMatches.isEmpty()){
+                Ln.e(errorMessage+LogUtils.buildAppListMessage("Found " + potentialMatches.size() + " potential " + (potentialMatches.size() == 1 ? "match:" : "matches:"), potentialMatches));
+            }
             return null;
         }
     }
@@ -285,6 +298,7 @@ public final class Device {
                 return new Intent().setComponent(componentName);
             }
         }
+        Ln.e("No app found for package: \"" + packageName + "\"");
         return null;
     }
 
