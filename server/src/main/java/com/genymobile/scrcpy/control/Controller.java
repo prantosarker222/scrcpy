@@ -612,7 +612,7 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
         List<ResolveInfo> drawerApps = Device.getDrawerApps();
         Intent launchIntent;
 
-        boolean forceStopBeforeStart = name.startsWith("+");
+        boolean forceStopBeforeStart = name.startsWith("-");
         if (forceStopBeforeStart) {
             name = name.substring(1);
         }
