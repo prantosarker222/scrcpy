@@ -641,9 +641,11 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
         } else {
             List<ResolveInfo> drawerApps = Device.getDrawerApps();
 
-            boolean searchByName = name.startsWith("?");
+            boolean searchByName = name.startsWith("?") || name.contains(" ");
             if (searchByName) {
-                name = name.substring(1);
+                if (!name.contains(" ")) {
+                    name = name.substring(1);
+                }
                 launchIntent = Device.getAppWithUniqueLabel(drawerApps,name);
                 if (launchIntent == null){
                     return;
