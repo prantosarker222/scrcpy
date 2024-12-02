@@ -222,12 +222,12 @@ public final class LogUtils {
         final int column = 30;
         for (Map.Entry<String, String> entry : sortedMap.entrySet()) {
             int padding = column - entry.getValue().length();
-            builder.append("\n ");
+            builder.append("\n - ");
             builder.append(entry.getValue());
             if (padding > 0) {
                 builder.append(String.format("%" + padding + "s", " "));
             } else {
-                builder.append("\n   ").append(String.format("%" + column + "s", " "));
+                builder.append("\n   - ").append(String.format("%" + column + "s", " "));
             }
             builder.append(" ").append(entry.getKey());
         }
