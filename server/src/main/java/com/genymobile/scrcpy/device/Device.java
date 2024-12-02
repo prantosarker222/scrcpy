@@ -296,7 +296,6 @@ public final class Device {
     }
 
     public static Intent getAppGivenPackageName(List<ResolveInfo> drawerApps, String packageName){
-        Ln.d("package name?");
         packageName = packageName.toLowerCase(Locale.getDefault());
         String errorMessage = "No app found with package name \"" + packageName + "\"\n";
         List<ResolveInfo> potentialMatches = new ArrayList<>();
